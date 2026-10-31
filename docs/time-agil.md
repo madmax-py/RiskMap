@@ -4,12 +4,12 @@ Este documento registra como o time do RiskMap trabalha: papéis, regras de entr
 
 ## Papéis do time
 
-| Papel | Integrante | O que faz no projeto |
-|---|---|---|
-| Product Owner | Eduardo Henrique de Sousa Silva | Mantém o backlog nas issues, escreve as histórias de usuário e os critérios de aceitação a partir dos requisitos (RF, RNF e RNE) do Documento de Especificação, define a prioridade MoSCoW e aceita ou recusa o que chega em DONE. |
-| Scrum Master | Pedro Gomes | Conduz as reuniões do time, cuida do quadro e do respeito ao limite de WIP, remove impedimentos, garante que todo PR siga o template e mantém o Documento de Especificação organizado. Também atua como Developer. |
-| Developer | Pedro Henrique Silva | Desenvolve e mantém os protótipos no Figma e as telas ligadas a cada requisito, e revisa PRs dos colegas. |
-| Developer | Kauã Ferreira Grande | Conduz a pesquisa com usuários e de soluções existentes, valida o backlog com o público-alvo e revisa PRs dos colegas. |
+| Papel | Integrante | GitHub | O que faz no projeto |
+|---|---|---|---|
+| Product Owner | Kauã Ferreira Grande | — | Mantém o backlog nas issues, escreve as histórias de usuário e os critérios de aceitação a partir dos requisitos (RF, RNF e RNE) do Documento de Especificação, define a prioridade MoSCoW, leva o backlog para validação com o público-alvo e aceita ou recusa o que chega em DONE. |
+| Scrum Master | Pedro Gomes | madmax-py | Conduz as reuniões do time, cuida do quadro e do respeito ao limite de WIP, remove impedimentos, garante que todo PR siga o template e mantém o Documento de Especificação organizado. Também atua como Developer. |
+| Developer | Pedro Henrique Silva | Pedro8317 | Desenvolve e mantém os protótipos no Figma e as telas ligadas a cada requisito, e revisa PRs dos colegas. |
+| Developer | Maria Eduarda | olvmah | Desenvolve os itens do backlog, como o script do banco de dados e a documentação técnica, e revisa PRs dos colegas. |
 
 Todos os integrantes podem abrir issues e PRs. Só o PO muda a prioridade de uma issue.
 
