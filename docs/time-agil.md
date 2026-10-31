@@ -6,7 +6,7 @@ Este documento registra como o time do RiskMap trabalha: papéis, regras de entr
 
 | Papel | Integrante | GitHub | O que faz no projeto |
 |---|---|---|---|
-| Product Owner | Kauã Ferreira Grande | — | Mantém o backlog nas issues, escreve as histórias de usuário e os critérios de aceitação a partir dos requisitos (RF, RNF e RNE) do Documento de Especificação, define a prioridade MoSCoW, leva o backlog para validação com o público-alvo e aceita ou recusa o que chega em DONE. |
+| Product Owner | Kauã Ferreira Grande | Kaua279ky | Mantém o backlog nas issues, escreve as histórias de usuário e os critérios de aceitação a partir dos requisitos (RF, RNF e RNE) do Documento de Especificação, define a prioridade MoSCoW, leva o backlog para validação com o público-alvo e aceita ou recusa o que chega em DONE. |
 | Scrum Master | Pedro Gomes | madmax-py | Conduz as reuniões do time, cuida do quadro e do respeito ao limite de WIP, remove impedimentos, garante que todo PR siga o template e mantém o Documento de Especificação organizado. Também atua como Developer. |
 | Developer | Pedro Henrique Silva | Pedro8317 | Desenvolve e mantém os protótipos no Figma e as telas ligadas a cada requisito, e revisa PRs dos colegas. |
 | Developer | Maria Eduarda | olvmah | Desenvolve os itens do backlog, como o script do banco de dados e a documentação técnica, e revisa PRs dos colegas. |
