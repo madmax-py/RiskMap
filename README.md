@@ -36,12 +36,12 @@ O backlog completo está nas [issues](https://github.com/madmax-py/RiskMap/issue
 
 ## Time e papéis
 
-| Integrante | Matrícula | Papel no Scrum | Responsabilidade no projeto |
+| Integrante | Papel no Scrum | GitHub | Responsabilidade no projeto |
 |---|---|---|---|
-| Eduardo Henrique de Sousa Silva | 2520231 | Product Owner | Requisitos e priorização do backlog |
-| Pedro Gomes | 2520819 | Scrum Master | Liderança, organização do projeto e do documento |
-| Pedro Henrique Silva | 2520616 | Developer | Design do sistema e protótipos |
-| Kauã Ferreira Grande | 2520781 | Developer | Pesquisa com usuários e soluções existentes |
+| Kauã Ferreira Grande | Product Owner | — | Priorização do backlog e validação com usuários |
+| Pedro Gomes | Scrum Master | [madmax-py](https://github.com/madmax-py) | Liderança, organização do projeto e do documento |
+| Pedro Henrique Silva | Developer | [Pedro8317](https://github.com/Pedro8317) | Design do sistema e protótipos |
+| Maria Eduarda | Developer | [olvmah](https://github.com/olvmah) | Desenvolvimento dos itens do backlog |
 
 Orientadores: Eduardo Dias Pereira (principal) e William Pereira dos Santos Júnior (secundário).
 
