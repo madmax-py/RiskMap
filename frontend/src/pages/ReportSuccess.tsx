@@ -71,6 +71,9 @@ export default function ReportSuccess() {
             Validado: entra no índice de risco da região
           </li>
         </motion.ol>
+        <motion.p variants={fadeUp} className="muted small center">
+          Quando for validada, a ocorrência soma 10 pontos ao seu nível de benefícios.
+        </motion.p>
       </motion.div>
       <div className="cta-bar">
         <Button block onClick={() => nav('/mapa', { replace: true })}>

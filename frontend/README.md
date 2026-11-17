@@ -66,6 +66,7 @@ src/
   main.tsx             entrada + imports de CSS/fontes
   store/AppStore.tsx   estado global (usuário, preferências, histórico, ocorrências, alertas)
   data/mock.ts         regiões, estatísticas, categorias, alertas e histórico fake
+  data/benefits.ts     parceiros, ofertas, níveis e regras de pontos (RF-005, RF-006, RNE-002, RNE-006)
   geo/
     config.ts          escolhe modo real ou demo (variáveis do .env)
     index.ts           geometria comum aos dois modos (áreas, distância, risco ao longo da rota)

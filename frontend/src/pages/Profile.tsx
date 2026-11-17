@@ -9,6 +9,7 @@ import { Dialog } from '../components/Dialog'
 import { Button } from '../components/Button'
 import { Field } from '../components/Field'
 import { useApp } from '../store/AppStore'
+import { LevelCard } from '../components/LevelCard'
 import { useToast } from '../components/Toast'
 import { profileSchema, type ProfileForm } from '../lib/validation'
 import { fadeUp, stagger } from '../lib/motion'
@@ -16,7 +17,7 @@ import { fadeUp, stagger } from '../lib/motion'
 export const PREF_LABEL = { segura: 'Mais segura', equilibrada: 'Equilibrada', rapida: 'Mais rápida' }
 
 export default function Profile() {
-  const { user, settings, history, reports, dispatch } = useApp()
+  const { user, settings, history, reports, dispatch, engagement, level } = useApp()
   const nav = useNavigate()
   const toast = useToast()
   const [editing, setEditing] = useState(false)
@@ -68,9 +69,13 @@ export default function Profile() {
             <span>Ocorrências enviadas</span>
           </div>
           <div>
-            <strong>{reports.filter((r) => r.status === 'validado').length * 10}</strong>
+            <strong>{engagement.points}</strong>
             <span>Pontos</span>
           </div>
+        </motion.div>
+
+        <motion.div variants={fadeUp}>
+          <LevelCard points={engagement.points} level={level} onClick={() => nav('/beneficios/nivel')} compact />
         </motion.div>
 
         {groups.map((g) => (
@@ -79,7 +84,7 @@ export default function Profile() {
             <ul className="card menu">
               {g.items.map(({ to, icon: Icon, label, value }) => (
                 <li key={to}>
-                  <motion.button onClick={() => nav(`/perfil/${to}`)}>
+                  <motion.button onClick={() => nav(to.startsWith('/') ? to : `/perfil/${to}`)}>
                     <Icon size={26} className="menu__icon" />
                     <span className="menu__label">{label}</span>
                     {value && <span className="menu__value">{value}</span>}

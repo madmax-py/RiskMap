@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useApp } from '../store/AppStore'
 import { BottomNav, SideNav } from './Nav'
 
-const TABS = ['/mapa', '/rotas', '/alertas', '/perfil']
+const TABS = ['/mapa', '/rotas', '/beneficios', '/alertas', '/perfil']
 
 /** Casca do app logado: sidebar no desktop, barra inferior no celular e transição entre páginas. */
 export function AppLayout() {
