@@ -672,6 +672,7 @@
 
 /* Retorno de toque nos cartões clicáveis: só a cor muda, nada encolhe */
 .route-item:active, .alert-item:active:not(:disabled), .menu > li > button:not(.toggle):active, .cat-card:active,
-.radio-card:active, .result:active, .promo:active, .main-alert:active, .logout:active, .suggestion:active {
+.radio-card:active, .result:active, .promo:active, .main-alert:active, .logout:active, .suggestion:active,
+.offer:active, .level-card:active {
   background-color: var(--surface-2);
 }

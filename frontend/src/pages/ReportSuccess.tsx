@@ -10,7 +10,7 @@ import { fadeUp, stagger } from '../lib/motion'
 
 export default function ReportSuccess() {
   const { id } = useParams()
-  const { reports } = useApp()
+  const { reports, subscription } = useApp()
   const nav = useNavigate()
   const report = reports.find((r) => r.id === id)
   const [left, setLeft] = useState(60 * 60)
@@ -71,6 +71,9 @@ export default function ReportSuccess() {
             Validado: entra no índice de risco da região
           </li>
         </motion.ol>
+        <motion.p variants={fadeUp} className="muted small center">
+          Quando for validada, a ocorrência soma {subscription.active ? '20 pontos (em dobro no RiskMap Mais)' : '10 pontos'} ao seu nível de benefícios.
+        </motion.p>
       </motion.div>
       <div className="cta-bar">
         <Button block onClick={() => nav('/mapa', { replace: true })}>

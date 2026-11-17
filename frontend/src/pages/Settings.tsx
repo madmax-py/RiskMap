@@ -10,6 +10,7 @@ import { Dialog } from '../components/Dialog'
 import { useApp, type Settings as S } from '../store/AppStore'
 import { useToast } from '../components/Toast'
 import { fadeUp, stagger } from '../lib/motion'
+import { formatPrice, PLAN } from '../data/benefits'
 
 const TITLES: Record<string, string> = {
   notificacoes: 'Notificações',
@@ -18,6 +19,7 @@ const TITLES: Record<string, string> = {
   tema: 'Tema',
   privacidade: 'Segurança e privacidade',
   ajuda: 'Ajuda e suporte',
+  assinatura: 'Assinatura',
 }
 
 export default function Settings() {
@@ -33,6 +35,7 @@ export default function Settings() {
         {section === 'tema' && <Theme />}
         {section === 'privacidade' && <Privacy />}
         {section === 'ajuda' && <Help />}
+        {section === 'assinatura' && <Subscription />}
       </motion.div>
     </div>
   )
@@ -261,6 +264,59 @@ function Help() {
           Falar com o suporte
         </Button>
       </motion.div>
+    </>
+  )
+}
+
+/** Status e cancelamento do RiskMap Mais. */
+function Subscription() {
+  const { subscription, dispatch } = useApp()
+  const toast = useToast()
+  const nav = useNavigate()
+  const [cancel, setCancel] = useState(false)
+  const price = formatPrice(PLAN.price)
+  if (!subscription.active)
+    return (
+      <motion.div variants={fadeUp} className="card sub-card">
+        <span className="status-pill status-pill--expirado">Sem assinatura</span>
+        <h2>{PLAN.name}</h2>
+        <p className="muted">Descontos na rede de parceiros, pontos em dobro e rota no Waze ou Google Maps por {price} por mês.</p>
+        <Button onClick={() => nav('/beneficios')}>Conhecer o {PLAN.name}</Button>
+      </motion.div>
+    )
+  return (
+    <>
+      <motion.div variants={fadeUp} className="card sub-card">
+        <span className="status-pill status-pill--utilizado">Ativa</span>
+        <h2>{PLAN.name}</h2>
+        <p className="muted">
+          {price} por mês · assinante desde {new Date(subscription.since ?? Date.now()).toLocaleDateString('pt-BR')}
+        </p>
+        <p className="muted small">Protótipo: nenhuma cobrança é feita.</p>
+      </motion.div>
+      <motion.div variants={fadeUp}>
+        <Button variant="danger-outline" block onClick={() => setCancel(true)}>
+          Cancelar assinatura
+        </Button>
+      </motion.div>
+      <Dialog open={cancel} onClose={() => setCancel(false)} title="Cancelar o RiskMap Mais?">
+        <p className="muted">Você perde o acesso aos descontos e aos pontos em dobro. Seus pontos e seu nível continuam guardados.</p>
+        <div className="dialog__actions">
+          <Button variant="secondary" onClick={() => setCancel(false)}>
+            Manter assinatura
+          </Button>
+          <Button
+            variant="danger"
+            onClick={() => {
+              dispatch({ type: 'unsubscribe' })
+              setCancel(false)
+              toast('Assinatura cancelada')
+            }}
+          >
+            Cancelar assinatura
+          </Button>
+        </div>
+      </Dialog>
     </>
   )
 }

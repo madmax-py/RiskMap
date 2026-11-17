@@ -1,11 +1,12 @@
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { Bell, Car, MapPinned, Plus, User } from 'lucide-react'
+import { Bell, Car, Gift, MapPinned, Plus, User } from 'lucide-react'
 import { useApp } from '../store/AppStore'
 import { Logo } from './Logo'
 
 const items = [
   { to: '/mapa', label: 'Mapa', icon: MapPinned },
   { to: '/rotas', label: 'Rotas', icon: Car },
+  { to: '/beneficios', label: 'Benefícios', icon: Gift },
   { to: '/alertas', label: 'Alertas', icon: Bell },
   { to: '/perfil', label: 'Perfil', icon: User },
 ]
@@ -18,17 +19,24 @@ function isActive(path: string, to: string) {
 
 export function BottomNav() {
   const { pathname } = useLocation()
-  const { unreadAlerts } = useApp()
+  const { unreadAlerts, engagement } = useApp()
+  const readyCodes = engagement.redemptions.some((r) => r.status === 'gerado')
   return (
     <nav className="bottom-nav" aria-label="Navegação principal">
       {items.map(({ to, label, icon: Icon }) => {
         const active = isActive(pathname, to)
         return (
-          <NavLink key={to} to={to} className={`bottom-nav__item ${active ? 'is-active' : ''}`}>
+          <NavLink
+            key={to}
+            to={to}
+            className={`bottom-nav__item ${active ? 'is-active' : ''}`}
+            aria-label={to === '/beneficios' && readyCodes ? `${label}, código pronto para usar` : to === '/alertas' && unreadAlerts ? `${label}, ${unreadAlerts} não lidos` : undefined}
+          >
             <span className="bottom-nav__pill" aria-hidden="true" />
             <span className="bottom-nav__icon">
               <Icon size={24} strokeWidth={active ? 2.2 : 1.8} />
               {to === '/alertas' && unreadAlerts > 0 && <i className="dot" />}
+              {to === '/beneficios' && readyCodes && <i className="dot" />}
             </span>
             <span>{label}</span>
           </NavLink>

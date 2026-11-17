@@ -16,6 +16,10 @@ import Profile from './pages/Profile'
 import Settings from './pages/Settings'
 import ReportOccurrence from './pages/ReportOccurrence'
 import ReportSuccess from './pages/ReportSuccess'
+import Benefits from './pages/Benefits'
+import OfferDetail from './pages/OfferDetail'
+import Redemption from './pages/Redemption'
+import Reputation from './pages/Reputation'
 
 /**
  * HashRouter (URLs com #) pra funcionar em qualquer hospedagem estática sem configurar servidor.
@@ -44,6 +48,10 @@ export default function App() {
                 <Route path="/perfil/:section" element={<Settings />} />
                 <Route path="/ocorrencia/nova" element={<ReportOccurrence />} />
                 <Route path="/ocorrencia/:id/enviada" element={<ReportSuccess />} />
+                <Route path="/beneficios" element={<Benefits />} />
+                <Route path="/beneficios/nivel" element={<Reputation />} />
+                <Route path="/beneficios/oferta/:id" element={<OfferDetail />} />
+                <Route path="/beneficios/resgate/:id" element={<Redemption />} />
               </Route>
               <Route path="*" element={<Navigate to="/mapa" replace />} />
             </Routes>

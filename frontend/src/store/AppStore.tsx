@@ -3,6 +3,7 @@ import type { RoutePreference } from '../lib/city'
 import type { Units } from '../lib/format'
 import { uid } from '../lib/motion'
 import { seedAlerts, seedHistory, USER_ADDRESS, type Alert, type HistoryEntry, type RouteStats } from '../data/mock'
+import { levelFor, PLAN, POINTS, redemptionCode, ROUTE_POINTS_PER_DAY, seedEngagement, type Level, type PointKind, type PointEvent, type Redemption } from '../data/benefits'
 
 /**
  * Estado global do protótipo (sem backend).
@@ -41,6 +42,18 @@ type State = {
   alerts: Alert[]
   readAlerts: string[]
   recentSearches: string[]
+  /** Engajamento e benefícios (RNE-002, RNE-006, RF-005). */
+  engagement: Engagement
+  /** Assinatura RiskMap Mais (simulada, sem cobrança no protótipo). */
+  subscription: { active: boolean; since: string | null }
+}
+
+export type Engagement = {
+  points: number
+  counts: Record<PointKind, number>
+  lastActivity: string
+  events: PointEvent[]
+  redemptions: Redemption[]
 }
 
 const defaultSettings: Settings = {
@@ -64,6 +77,8 @@ const initial: State = {
   alerts: seedAlerts,
   readAlerts: [],
   recentSearches: ['jardim-america', 'vila-nova'],
+  engagement: seedEngagement,
+  subscription: { active: false, since: null },
 }
 
 type Action =
@@ -77,6 +92,10 @@ type Action =
   | { type: 'readAlerts' }
   | { type: 'search'; id: string }
   | { type: 'reset' }
+  | { type: 'earn'; kind: PointKind; label: string }
+  | { type: 'subscribe' }
+  | { type: 'unsubscribe' }
+  | { type: 'redeem'; offerId: string; id: string; code: string }
 
 function reducer(s: State, a: Action): State {
   switch (a.type) {
@@ -118,6 +137,36 @@ function reducer(s: State, a: Action): State {
       return { ...s, recentSearches: [a.id, ...s.recentSearches.filter((x) => x !== a.id)].slice(0, 4) }
     case 'reset':
       return initial
+    case 'earn': {
+      const e = s.engagement
+      const now = new Date()
+      // RNE-002: no máximo 5 pontos de rota por dia
+      if (a.kind === 'rota') {
+        const today = e.events.filter((x) => x.kind === 'rota' && new Date(x.date).toDateString() === now.toDateString()).length
+        if (today >= ROUTE_POINTS_PER_DAY) return { ...s, engagement: { ...e, lastActivity: now.toISOString() } }
+      }
+      // assinantes do RiskMap Mais somam pontos em dobro
+      const pts = POINTS[a.kind] * (s.subscription.active ? PLAN.pointsMultiplier : 1)
+      const ev: PointEvent = { id: uid(), kind: a.kind, points: pts, label: a.label, date: now.toISOString() }
+      return {
+        ...s,
+        engagement: {
+          ...e,
+          points: e.points + ev.points,
+          counts: { ...e.counts, [a.kind]: e.counts[a.kind] + 1 },
+          lastActivity: ev.date,
+          events: [ev, ...e.events].slice(0, 50),
+        },
+      }
+    }
+    case 'subscribe':
+      return { ...s, subscription: { active: true, since: new Date().toISOString() } }
+    case 'unsubscribe':
+      return { ...s, subscription: { active: false, since: null } }
+    case 'redeem': {
+      const r: Redemption = { id: a.id, offerId: a.offerId, code: a.code, createdAt: new Date().toISOString(), status: 'gerado' }
+      return { ...s, engagement: { ...s.engagement, redemptions: [r, ...s.engagement.redemptions] } }
+    }
   }
 }
 
@@ -138,6 +187,9 @@ type Ctx = State & {
   unreadAlerts: number
   isFavorite: (from: string, to: string) => boolean
   currentAddress: string
+  level: Level
+  /** Gera o código de resgate e devolve o id do resgate (RF-005). */
+  redeem: (offerId: string) => string
   /** Tema efetivo depois de resolver "sistema". */
   resolvedTheme: 'escuro' | 'claro'
 }
@@ -174,6 +226,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       unreadAlerts: state.alerts.filter((a) => !state.readAlerts.includes(a.id)).length,
       currentAddress: USER_ADDRESS,
       resolvedTheme,
+      level: levelFor(state.engagement.points),
+      redeem: (offerId: string) => {
+        const id = uid()
+        dispatch({ type: 'redeem', offerId, id, code: redemptionCode() })
+        return id
+      },
     }),
     [state, isFavorite, resolvedTheme],
   )

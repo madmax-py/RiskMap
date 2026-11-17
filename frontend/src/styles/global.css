@@ -46,6 +46,11 @@
   --amber-ink: var(--amber);
   --green-ink: var(--green);
 
+  /* medalhas dos níveis de benefícios (só ícone) */
+  --lvl-bronze: #d08a4c;
+  --lvl-prata: #b4bfcf;
+  --lvl-ouro: #f0bf2a;
+
   /* camadas e sobreposições */
   --hover: rgba(255, 255, 255, 0.05);
   --press: rgba(255, 255, 255, 0.1);
@@ -117,6 +122,9 @@
   --amber-ink: #8a5d00;
   --green-ink: #15803d;
   --gray-400: #66728a;
+  --lvl-bronze: #a5652a;
+  --lvl-prata: #6f7c90;
+  --lvl-ouro: #b7860b;
 
   --shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
   --shadow-sm: 0 4px 14px rgba(15, 23, 42, 0.1);
@@ -353,7 +361,7 @@ i.lv-alto, i.lv-atencao, i.lv-baixo { display: inline-block; width: 12px; height
   height: calc(var(--nav-h) + var(--safe-b));
   padding: 6px 8px var(--safe-b);
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   background: color-mix(in srgb, var(--bg-2) 92%, transparent);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);

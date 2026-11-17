@@ -22,7 +22,7 @@ export default function Navigation() {
   }))
   const state = useRoute(from, to, pref)
   const route = state.route
-  const { settings } = useApp()
+  const { settings, engagement, dispatch, subscription } = useApp()
   const nav = useNavigate()
   const mapRef = useRef<MapHandle>(null)
   const [t, setT] = useState(0)
@@ -46,6 +46,16 @@ export default function Navigation() {
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
   }, [playing, fast, route, t >= 1]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // RNE-002: concluir a rota mais segura vale 1 ponto (até 5 por dia). Roda uma vez, na chegada.
+  const [earned, setEarned] = useState<null | boolean>(null)
+  useEffect(() => {
+    if (t < 1 || earned !== null || !route) return
+    if (pref !== 'segura') return setEarned(false)
+    const today = engagement.events.filter((e) => e.kind === 'rota' && new Date(e.date).toDateString() === new Date().toDateString()).length
+    dispatch({ type: 'earn', kind: 'rota', label: `Rota mais segura concluída · ${placeName(from)} → ${placeName(to)}` })
+    setEarned(today < 5)
+  }, [t >= 1]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const pos = route ? along(route.points, t) : null
 
@@ -158,6 +168,7 @@ export default function Navigation() {
         <p className="muted">
           {placeName(from)} → {placeName(to)} · {formatDistance(route.meters, settings.units)} em {formatMinutes(route.minutes)}
         </p>
+        {earned && <p className="earned-note">{subscription.active ? '+2 pontos (em dobro no RiskMap Mais)' : '+1 ponto'} por concluir a rota mais segura</p>}
         <div className="dialog__actions">
           <Button variant="secondary" onClick={() => nav('/rotas')}>
             Ver histórico
