@@ -52,11 +52,11 @@ Detalhes dos papéis, Definition of Ready, Definition of Done e regras do time e
 O RiskMap ainda não tem código executável. A implementação começa no próximo período. Por enquanto, o projeto pode ser acessado assim:
 
 - **Protótipo navegável (Figma):** https://www.figma.com/design/qZxm8V84HM4ZehntOEzig1/Sem-t%C3%ADtulo?node-id=78-1221
-- **Script do banco de dados:** [database/schema.sql](database/schema.sql), para PostgreSQL com PostGIS:
+- **Script do banco de dados:** [database/schema_v2.sql](database/schema_v2.sql) (versão atual), para PostgreSQL 15+ com PostGIS. O [database/schema.sql](database/schema.sql) é a primeira versão, mantida só como histórico:
 
   ```bash
   createdb riskmap
-  psql -d riskmap -f database/schema.sql
+  psql -d riskmap -f database/schema_v2.sql
   ```
 
 - **Backlog:** [issues do repositório](https://github.com/madmax-py/RiskMap/issues)
