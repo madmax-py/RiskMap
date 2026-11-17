@@ -339,8 +339,10 @@
 .level div { display: grid; }
 .level strong { font-size: 16px; font-weight: 600; white-space: nowrap; }
 .level span { font-size: 12px; color: var(--text-3); }
-.levels-bar { display: flex; height: 6px; border-radius: 6px; overflow: hidden; gap: 2px; margin-top: 14px; }
-.levels-bar i { display: block; flex-basis: 0; background: var(--lv); }
+.levels-bar { display: flex; align-items: center; gap: 12px; height: 6px; margin-top: 16px; }
+/* trechos retos; um ponto entre cada cor marca a troca de nível */
+.levels-bar i { position: relative; display: block; flex-basis: 0; min-width: 6px; width: auto; height: 4px; border-radius: 0; background: var(--lv); }
+.levels-bar i + i::before { content: ''; position: absolute; left: -8px; top: 50%; width: 4px; height: 4px; border-radius: 50%; background: var(--text-3); transform: translateY(-50%); }
 .tips-card ul { display: grid; gap: 8px; }
 .tips-card li { display: flex; gap: 10px; font-size: 14px; color: var(--text-2); }
 .tips-card li svg { flex: none; margin-top: 2px; }
@@ -791,3 +793,25 @@
 .external-nav h4 { font-size: 15px; font-weight: 600; }
 .external-nav__btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px; }
 .soon--on { color: var(--primary-bright); background: var(--primary-soft); border-color: color-mix(in srgb, var(--primary-bright) 35%, transparent); vertical-align: middle; }
+
+/* opções de rota (RF-002): tempo, exposição e ganho de cada preferência */
+.route-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.route-option {
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  padding: 10px 10px 11px;
+  border-radius: var(--r);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  text-align: left;
+  transition: border-color 0.15s var(--ease), background-color 0.15s var(--ease);
+}
+.route-option:hover { border-color: var(--border-2); }
+.route-option.is-on { border-color: var(--primary-bright); background: var(--primary-soft); }
+.route-option__name { font-size: 12px; font-weight: 600; color: var(--text-2); }
+.route-option.is-on .route-option__name { color: var(--primary-bright); }
+.route-option strong { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.route-option__risk { font-size: 12px; color: var(--green-ink); line-height: 1.3; }
+.route-option__risk.is-alto { color: var(--red-ink); }
+.route-option small { font-size: 11px; color: var(--text-3); line-height: 1.3; margin-top: 2px; }

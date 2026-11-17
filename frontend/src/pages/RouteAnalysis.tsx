@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { AlertTriangle, ArrowUpDown, Check, ChevronDown, Clock, Info, LocateFixed, MapPin, RefreshCw, ShieldAlert, ShieldCheck, Sparkles, Star } from 'lucide-react'
+import { AlertTriangle, ArrowUpDown, Check, Clock, Info, LocateFixed, MapPin, RefreshCw, ShieldAlert, ShieldCheck, Star } from 'lucide-react'
 import { PageHeader } from '../components/PageHeader'
 import { Segmented } from '../components/Segmented'
 import { Button } from '../components/Button'
@@ -9,7 +9,7 @@ import { MapView } from '../components/MapView'
 import { useApp } from '../store/AppStore'
 import { useToast } from '../components/Toast'
 import { regionById, regions } from '../data/mock'
-import { placeName, routeStats, useRoute } from '../geo/routing'
+import { exposure, placeName, routeStats, useRouteOptions, type Route, type RouteOptions } from '../geo/routing'
 import { userPos, zoneAtPoint } from '../geo'
 import { formatDistance, formatMinutes } from '../lib/format'
 import { fadeUp, stagger, uid } from '../lib/motion'
@@ -45,16 +45,15 @@ export default function RouteAnalysis() {
 
   const error = !to ? 'Escolha um destino' : from === to ? 'Origem e destino precisam ser diferentes' : null
   const [retry, setRetry] = useState(0)
-  const state = useRoute(error ? null : from, error ? null : to, pref, retry)
-  const route = state.route
+  // as três opções vêm de uma vez, medidas pelo mesmo critério (ver getRouteOptions)
+  const state = useRouteOptions(error ? null : from, error ? null : to, retry)
+  const options = state.options
+  const route = options?.[pref] ?? null
   const loading = state.status === 'loading'
-  // compara com a rota mais segura pra sugerir a troca (não roda quando já é a segura)
-  const saferState = useRoute(error || pref === 'segura' || !route ? null : from, to, 'segura')
-  const safer = saferState.route && route && saferState.route.byLevel.alto + 50 < route.byLevel.alto ? saferState.route : null
 
   const cls = route?.cls ?? 'baixo'
   // quando não há alternativa melhor, explica o porquê em vez de só repetir "alto risco"
-  const noSaferOption = !!route && cls === 'alto' && !safer && (pref === 'segura' || saferState.status === 'ok')
+  const noSaferOption = !!route && cls === 'alto' && route === options?.segura
   const endZone = route ? [zoneAtPoint(route.points[0]), zoneAtPoint(route.points[route.points.length - 1])].find((z) => z?.level === 'alto') : undefined
   const info = CLASS_INFO[cls]
   const fav = isFavorite(from, to)
@@ -138,7 +137,11 @@ export default function RouteAnalysis() {
           </AnimatePresence>
 
           <motion.div variants={fadeUp}>
-            <Segmented options={PREFS} value={pref} onChange={(v) => set({ pref: v })} variant="chips" ariaLabel="Preferência de rota" />
+            {options ? (
+              <RouteOptionsPicker options={options} value={pref} units={units} onChange={(v) => set({ pref: v })} />
+            ) : (
+              <Segmented options={PREFS} value={pref} onChange={(v) => set({ pref: v })} variant="chips" ariaLabel="Preferência de rota" />
+            )}
           </motion.div>
 
           {state.status === 'error' && (
@@ -205,26 +208,6 @@ export default function RouteAnalysis() {
                 </motion.div>
               )}
 
-              <AnimatePresence>
-                {safer && (
-                  <motion.button
-                    className="suggestion"
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    onClick={() => set({ pref: 'segura' })}
-                  >
-                    <Sparkles size={18} />
-                    <span>
-                      <strong>Rota mais segura disponível</strong>
-                      <small>
-                        +{Math.max(1, safer.minutes - route.minutes)} min · evita {formatDistance(route.byLevel.alto - safer.byLevel.alto, units)} em área de alto risco
-                      </small>
-                    </span>
-                    <ChevronDown size={18} style={{ rotate: '-90deg' }} />
-                  </motion.button>
-                )}
-              </AnimatePresence>
 
               <motion.section variants={fadeUp} className="card levels-card">
                 <h4>Níveis de risco no trajeto</h4>
@@ -240,7 +223,7 @@ export default function RouteAnalysis() {
                   ))}
                 </div>
                 <div className="levels-bar" aria-hidden="true">
-                  {(['alto', 'atencao', 'baixo'] as const).map((l) => (
+                  {(['alto', 'atencao', 'baixo'] as const).filter((l) => route.byLevel[l] > 0).map((l) => (
                     <motion.i key={l} className={`lv-${l}`} initial={{ flexGrow: 0 }} animate={{ flexGrow: route.byLevel[l] }} transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }} />
                   ))}
                 </div>
@@ -294,6 +277,34 @@ export default function RouteAnalysis() {
           Iniciar navegação
         </Button>
       </div>
+    </div>
+  )
+}
+
+/** As três opções lado a lado, com tempo e exposição, e o ganho explícito de cada uma (RF-002). */
+function RouteOptionsPicker({ options, value, units, onChange }: { options: RouteOptions; value: RoutePreference; units: 'km' | 'mi'; onChange: (v: RoutePreference) => void }) {
+  const fast = options.rapida
+  const same = (a: Route, b: Route) => a === b
+  return (
+    <div className="route-options" role="radiogroup" aria-label="Preferência de rota">
+      {PREFS.map(({ value: v, label }) => {
+        const r = options[v]
+        const on = v === value
+        const extra = r.minutes - fast.minutes
+        const eFast = exposure(fast)
+        const less = eFast > 0 ? Math.round((1 - exposure(r) / eFast) * 100) : 0
+        const twin = v !== 'rapida' && same(r, options.rapida) ? 'Igual à mais rápida' : v === 'equilibrada' && same(r, options.segura) ? 'Igual à mais segura' : null
+        return (
+          <button key={v} type="button" role="radio" aria-checked={on} className={`route-option ${on ? 'is-on' : ''}`} onClick={() => onChange(v)}>
+            <span className="route-option__name">{label}</span>
+            <strong>{formatMinutes(r.minutes)}</strong>
+            <span className={`route-option__risk ${r.byLevel.alto > 0 ? 'is-alto' : ''}`}>
+              {r.byLevel.alto > 0 ? `${formatDistance(r.byLevel.alto, units)} em alto risco` : 'Sem alto risco'}
+            </span>
+            <small>{twin ?? (v === 'rapida' ? 'Menor tempo' : less > 0 ? `${extra > 0 ? `+${extra} min · ` : ''}${less}% menos exposição` : 'Mesma exposição')}</small>
+          </button>
+        )
+      })}
     </div>
   )
 }

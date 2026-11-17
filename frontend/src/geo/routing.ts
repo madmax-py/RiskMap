@@ -46,37 +46,86 @@ export function placeName(id: string) {
 export const geoPlaceId = (p: Pt, label: string) => `geo:${p[0].toFixed(6)},${p[1].toFixed(6)}|${encodeURIComponent(label)}`
 
 // ---------- cálculo ----------
-const cache = new Map<string, Promise<Route>>()
+/**
+ * Como as três preferências são escolhidas:
+ * 1. Calculamos várias rotas candidatas (sem desvio, desviando do alto risco, desviando de alto risco e atenção,
+ *    e as alternativas que o serviço sugerir).
+ * 2. Medimos a exposição real de cada uma, trecho a trecho, com analyzeLine (inclusive dentro das áreas de
+ *    origem e destino, que não dá pra evitar).
+ * 3. Escolhemos dentro do MESMO conjunto:
+ *    - Mais rápida:  menor tempo (empate: menor exposição)
+ *    - Mais segura:  menor exposição (empate: menor tempo)
+ *    - Equilibrada:  menor tempo + EXPOSURE_MIN_PER_KM × exposição
+ * Isso garante que a "Mais segura" nunca expõe mais que a "Mais rápida", nem fica mais lenta sem ganho.
+ */
+export const EXPOSURE_WEIGHT: Record<RiskLevel, number> = { alto: 1, atencao: 0.4, baixo: 0 }
+const EXPOSURE_MIN_PER_KM = 4 // quantos minutos a equilibrada aceita gastar pra evitar 1 km de exposição
+/** Exposição ponderada, em metros equivalentes de alto risco. */
+export const exposure = (r: Pick<Route, 'byLevel'>) => r.byLevel.alto * EXPOSURE_WEIGHT.alto + r.byLevel.atencao * EXPOSURE_WEIGHT.atencao
+const TIE_M = 50 // diferenças de exposição menores que isso contam como empate
 
-export function getRoute(from: string, to: string, pref: RoutePreference): Promise<Route> {
-  const key = `${from}|${to}|${pref}`
+export type RouteOptions = Record<RoutePreference, Route>
+
+function pickOptions(cands: Route[]): RouteOptions {
+  const byTime = [...cands].sort((a, b) => a.minutes - b.minutes || exposure(a) - exposure(b))
+  const rapida = byTime[0]
+  const minE = Math.min(...cands.map(exposure))
+  const segura = byTime.find((r) => exposure(r) <= minE + TIE_M)!
+  const cost = (r: Route) => r.minutes + (exposure(r) / 1000) * EXPOSURE_MIN_PER_KM
+  const equilibrada = [...byTime].sort((a, b) => cost(a) - cost(b))[0]
+  return { segura, equilibrada, rapida }
+}
+
+/** Rotas parecidas (mesmo tempo e distância quase igual) contam como a mesma. */
+function dedupe(routes: Route[]) {
+  const out: Route[] = []
+  for (const r of routes) if (!out.some((o) => o.minutes === r.minutes && Math.abs(o.meters - r.meters) < 60)) out.push(r)
+  return out
+}
+
+const cache = new Map<string, Promise<RouteOptions>>()
+
+export function getRouteOptions(from: string, to: string): Promise<RouteOptions> {
+  const key = `${from}|${to}`
   if (!cache.has(key)) {
-    const p = (IS_REAL ? orsRoute(from, to, pref) : demoRoute(from, to, pref)).catch((e) => {
-      cache.delete(key) // não guarda erro em cache: permite tentar de novo
-      throw e
-    })
+    const p = (IS_REAL ? orsCandidates(from, to) : demoCandidates(from, to))
+      .then((c) => pickOptions(dedupe(c)))
+      .catch((e) => {
+        cache.delete(key) // não guarda erro em cache: permite tentar de novo
+        throw e
+      })
     cache.set(key, p)
   }
   return cache.get(key)!
 }
 
-export type RouteState = { status: 'idle' | 'loading' | 'ok' | 'error'; route: Route | null; error?: string }
+export const getRoute = (from: string, to: string, pref: RoutePreference) => getRouteOptions(from, to).then((o) => o[pref])
 
-/** Hook: calcula a rota e devolve o estado (carregando / ok / erro). */
-export function useRoute(from: string | null, to: string | null, pref: RoutePreference, retryKey = 0): RouteState {
-  const [state, setState] = useState<RouteState>({ status: 'idle', route: null })
+export type RouteOptionsState = { status: 'idle' | 'loading' | 'ok' | 'error'; options: RouteOptions | null; error?: string }
+
+/** Hook: calcula as três opções de rota de uma vez (trocar de preferência não faz nova chamada). */
+export function useRouteOptions(from: string | null, to: string | null, retryKey = 0): RouteOptionsState {
+  const [state, setState] = useState<RouteOptionsState>({ status: 'idle', options: null })
   useEffect(() => {
-    if (!from || !to || from === to) return setState({ status: 'idle', route: null })
+    if (!from || !to || from === to) return setState({ status: 'idle', options: null })
     let alive = true
-    setState((s) => ({ status: 'loading', route: s.route }))
-    getRoute(from, to, pref)
-      .then((route) => alive && setState({ status: 'ok', route }))
-      .catch((e: Error) => alive && setState({ status: 'error', route: null, error: e.message }))
+    setState((s) => ({ status: 'loading', options: s.options }))
+    getRouteOptions(from, to)
+      .then((options) => alive && setState({ status: 'ok', options }))
+      .catch((e: Error) => alive && setState({ status: 'error', options: null, error: e.message }))
     return () => {
       alive = false
     }
-  }, [from, to, pref, retryKey])
+  }, [from, to, retryKey])
   return state
+}
+
+export type RouteState = { status: 'idle' | 'loading' | 'ok' | 'error'; route: Route | null; error?: string }
+
+/** Hook: a rota de uma preferência (usado na navegação). */
+export function useRoute(from: string | null, to: string | null, pref: RoutePreference, retryKey = 0): RouteState {
+  const s = useRouteOptions(from, to, retryKey)
+  return { status: s.status, route: s.options?.[pref] ?? null, error: s.error }
 }
 
 export function routeStats(r: Route) {
@@ -95,13 +144,17 @@ function finish(points: Pt[], minutes: number, steps: Step[], note?: string): Ro
 }
 
 // ---------- modo demo: cidade fictícia + A* ----------
-async function demoRoute(from: string, to: string, pref: RoutePreference): Promise<Route> {
+async function demoCandidates(from: string, to: string): Promise<Route[]> {
   const grid = (id: string) => (id === 'atual' ? snap(USER_POS) : regionById(id) ? snap(regionById(id)!.label) : null)
   const a = grid(from)
   const b = grid(to)
   if (!a || !b) throw new Error('No modo demonstração só dá pra traçar rota entre regiões.')
-  const r = findRoute(a, b, riskZones, pref)
-  if (!r) throw new Error('Não encontrei um caminho entre esses pontos.')
+  const out = (['rapida', 'equilibrada', 'segura'] as const).map((p) => findRoute(a, b, riskZones, p)).filter(Boolean).map((r) => demoToRoute(r!))
+  if (!out.length) throw new Error('Não encontrei um caminho entre esses pontos.')
+  return out
+}
+
+function demoToRoute(r: NonNullable<ReturnType<typeof findRoute>>): Route {
   const steps: Step[] = r.steps.map((s) => ({
     index: s.atIndex,
     turn: s.turn,
@@ -134,8 +187,10 @@ function polygonsToAvoid(pref: RoutePreference, a: Pt, b: Pt) {
     .filter((poly) => !pointInPolygon(a, poly) && !pointInPolygon(b, poly))
 }
 
-async function orsRequest(a: Pt, b: Pt, avoid: Pt[][]): Promise<OrsResponse> {
+async function orsRequest(a: Pt, b: Pt, avoid: Pt[][], alternatives = false): Promise<OrsResponse> {
   const body: Record<string, unknown> = { coordinates: [a, b], language: 'pt', instructions: true, units: 'm' }
+  // o próprio ORS sugere até 2 caminhos alternativos (mais opções pra comparar a exposição)
+  if (alternatives) body.alternative_routes = { target_count: 3, weight_factor: 1.6, share_factor: 0.6 }
   if (avoid.length) {
     body.options = {
       avoid_polygons: { type: 'MultiPolygon', coordinates: avoid.map((ring) => [[...ring, ring[0]]]) },
@@ -167,24 +222,33 @@ async function orsRequest(a: Pt, b: Pt, avoid: Pt[][]): Promise<OrsResponse> {
   return res.json()
 }
 
-async function orsRoute(from: string, to: string, pref: RoutePreference): Promise<Route> {
+async function orsCandidates(from: string, to: string): Promise<Route[]> {
   const a = placePoint(from)
   const b = placePoint(to)
   if (!a || !b) throw new Error('Não encontramos esse local. Escolha a origem e o destino de novo.')
-  const avoid = polygonsToAvoid(pref, a, b)
-  let data: OrsResponse
-  let note: string | undefined
-  try {
-    data = await orsRequest(a, b, avoid)
-  } catch (e) {
-    // se não existe caminho desviando, cai pra rota normal e avisa
-    if (avoid.length && (e as { status?: number }).status && (e as { status?: number }).status! < 500) {
-      data = await orsRequest(a, b, [])
-      note = 'Não há caminho que desvie de todas as áreas de risco. Mostrando a rota direta.'
-    } else throw e
+  // a rota direta é obrigatória: é ela que define a "mais rápida" de verdade
+  const base = await orsRequest(a, b, [])
+  const out = (base.features ?? []).map(orsToRoute)
+  if (!out.length) throw new Error('Nenhuma rota encontrada.')
+  // candidatas extras: desviando do alto risco, desviando de tudo e as alternativas do próprio ORS.
+  // Se alguma falhar (sem caminho que desvie, limite de chamadas), seguimos com as outras.
+  const extras: [Pt[][], boolean][] = [
+    [polygonsToAvoid('equilibrada', a, b), false],
+    [polygonsToAvoid('segura', a, b), false],
+    [[], true],
+  ]
+  for (const [avoid, alt] of extras) {
+    if (!alt && !avoid.length) continue
+    try {
+      out.push(...((await orsRequest(a, b, avoid, alt)).features ?? []).map(orsToRoute))
+    } catch {
+      /* candidata opcional */
+    }
   }
-  const f = data.features?.[0]
-  if (!f) throw new Error('Nenhuma rota encontrada.')
+  return out
+}
+
+function orsToRoute(f: OrsResponse['features'][number]): Route {
   const points = f.geometry.coordinates.map((c) => [c[0], c[1]] as Pt)
   const steps: Step[] = []
   let acc = 0
@@ -194,7 +258,7 @@ async function orsRoute(from: string, to: string, pref: RoutePreference): Promis
       acc += s.distance
     }
   const minutes = Math.max(1, Math.round((f.properties.summary.duration ?? 0) / 60))
-  return finish(points, minutes, steps, note)
+  return finish(points, minutes, steps)
 }
 
 // ---------- busca de endereços (só modo real) ----------
