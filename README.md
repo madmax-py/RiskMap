@@ -49,8 +49,17 @@ Detalhes dos papéis, Definition of Ready, Definition of Done e regras do time e
 
 ## Como executar
 
-O RiskMap ainda não tem código executável. A implementação começa no próximo período. Por enquanto, o projeto pode ser acessado assim:
+O RiskMap ainda não tem back-end. A implementação completa começa no próximo período. Por enquanto, o projeto pode ser acessado assim:
 
+- **Protótipo web (front-end, dados simulados):** pasta [frontend/](frontend/). Para rodar:
+
+  ```bash
+  cd frontend
+  npm install
+  npm run dev
+  ```
+
+  Detalhes, modo mapa real e estrutura em [frontend/README.md](frontend/README.md).
 - **Protótipo navegável (Figma):** https://www.figma.com/design/qZxm8V84HM4ZehntOEzig1/Sem-t%C3%ADtulo?node-id=78-1221
 - **Script do banco de dados:** [database/schema.sql](database/schema.sql), para PostgreSQL com PostGIS:
 
