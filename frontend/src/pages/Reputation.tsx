@@ -11,7 +11,7 @@ const KIND_ICON: Record<PointKind, typeof Check> = { report: ShieldCheck, avalia
 
 /** RF-006: nível atual, como ganhar pontos, histórico de contribuições aceitas e regra de decaimento. */
 export default function Reputation() {
-  const { engagement, level } = useApp()
+  const { engagement, level, subscription } = useApp()
   const idleDays = Math.floor((Date.now() - new Date(engagement.lastActivity).getTime()) / 864e5)
   const daysLeft = Math.max(0, DECAY.idleDays - idleDays)
 
@@ -46,7 +46,9 @@ export default function Reputation() {
         </motion.section>
 
         <motion.section variants={fadeUp}>
-          <h3 className="block-title">Como ganhar pontos</h3>
+          <h3 className="block-title">
+            Como ganhar pontos {subscription.active && <em className="soon soon--on">Em dobro no RiskMap Mais</em>}
+          </h3>
           <ul className="card info-list info-list--points">
             <li>
               <ShieldCheck size={18} />

@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ChevronRight, Gift, KeyRound, Lock, ShieldCheck, Sparkles, Ticket, Wrench, type LucideIcon } from 'lucide-react'
 import { PageHeader } from '../components/PageHeader'
+import BenefitsPlan from './BenefitsPlan'
 import { Segmented } from '../components/Segmented'
 import { LevelCard } from '../components/LevelCard'
 import { Button } from '../components/Button'
@@ -22,7 +23,7 @@ export default function Benefits() {
   const nav = useNavigate()
   const [params, setParams] = useSearchParams()
   const tab = (params.get('aba') as Tab) || 'ofertas'
-  const { engagement, level, settings } = useApp()
+  const { engagement, level, settings, subscription } = useApp()
   const [cat, setCat] = useState<Cat>('todas')
   const [dist, setDist] = useState<Dist>('todas')
 
@@ -31,6 +32,9 @@ export default function Benefits() {
     .filter(({ p }) => (cat === 'todas' || p.category === cat) && (dist === 'todas' || p.meters <= Number(dist)))
     .sort((a, b) => a.p.meters - b.p.meters)
   const active = engagement.redemptions.filter((r) => r.status === 'gerado').length
+
+  // sem assinatura, a aba mostra primeiro a página do RiskMap Mais
+  if (!subscription.active) return <BenefitsPlan />
 
   return (
     <div className="page">

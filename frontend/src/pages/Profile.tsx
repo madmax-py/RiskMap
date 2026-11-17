@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { motion } from 'framer-motion'
-import { Bell, ChevronRight, CircleHelp, LogOut, Mail, Moon, Pencil, Route, Ruler, ShieldAlert, User } from 'lucide-react'
+import { Bell, ChevronRight, CircleHelp, LogOut, Sparkles, Mail, Moon, Pencil, Route, Ruler, ShieldAlert, User } from 'lucide-react'
 import { PageHeader } from '../components/PageHeader'
 import { Dialog } from '../components/Dialog'
 import { Button } from '../components/Button'
@@ -17,13 +17,17 @@ import { fadeUp, stagger } from '../lib/motion'
 export const PREF_LABEL = { segura: 'Mais segura', equilibrada: 'Equilibrada', rapida: 'Mais rápida' }
 
 export default function Profile() {
-  const { user, settings, history, reports, dispatch, engagement, level } = useApp()
+  const { user, settings, history, reports, dispatch, engagement, level, subscription } = useApp()
   const nav = useNavigate()
   const toast = useToast()
   const [editing, setEditing] = useState(false)
   const [leaving, setLeaving] = useState(false)
 
   const groups = [
+    {
+      title: 'Assinatura',
+      items: [{ to: 'assinatura', icon: Sparkles, label: 'RiskMap Mais', value: subscription.active ? 'Ativa' : 'Conhecer' }],
+    },
     {
       title: 'Preferências',
       items: [

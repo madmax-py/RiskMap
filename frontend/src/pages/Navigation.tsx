@@ -22,7 +22,7 @@ export default function Navigation() {
   }))
   const state = useRoute(from, to, pref)
   const route = state.route
-  const { settings, engagement, dispatch } = useApp()
+  const { settings, engagement, dispatch, subscription } = useApp()
   const nav = useNavigate()
   const mapRef = useRef<MapHandle>(null)
   const [t, setT] = useState(0)
@@ -168,7 +168,7 @@ export default function Navigation() {
         <p className="muted">
           {placeName(from)} → {placeName(to)} · {formatDistance(route.meters, settings.units)} em {formatMinutes(route.minutes)}
         </p>
-        {earned && <p className="earned-note">+1 ponto por concluir a rota mais segura</p>}
+        {earned && <p className="earned-note">{subscription.active ? '+2 pontos (em dobro no RiskMap Mais)' : '+1 ponto'} por concluir a rota mais segura</p>}
         <div className="dialog__actions">
           <Button variant="secondary" onClick={() => nav('/rotas')}>
             Ver histórico

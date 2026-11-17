@@ -53,6 +53,10 @@ export function nextLevel(points: number): { level: Level; missing: number; prog
   return { level: next.id, missing: next.min - points, progress: (points - cur.min) / (next.min - cur.min) }
 }
 
+/** Assinatura "RiskMap Mais": dá acesso à rede de benefícios e a recursos extras. Valor de protótipo. */
+export const PLAN = { name: 'RiskMap Mais', price: 9.9, pointsMultiplier: 2 } as const
+export const formatPrice = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+
 /** RNE-002: pontos por ação. */
 export const POINTS = { report: 10, avaliacao: 2, rota: 1 } as const
 export const ROUTE_POINTS_PER_DAY = 5

@@ -3,7 +3,7 @@ import type { RoutePreference } from '../lib/city'
 import type { Units } from '../lib/format'
 import { uid } from '../lib/motion'
 import { seedAlerts, seedHistory, USER_ADDRESS, type Alert, type HistoryEntry, type RouteStats } from '../data/mock'
-import { levelFor, POINTS, redemptionCode, ROUTE_POINTS_PER_DAY, seedEngagement, type Level, type PointKind, type PointEvent, type Redemption } from '../data/benefits'
+import { levelFor, PLAN, POINTS, redemptionCode, ROUTE_POINTS_PER_DAY, seedEngagement, type Level, type PointKind, type PointEvent, type Redemption } from '../data/benefits'
 
 /**
  * Estado global do protótipo (sem backend).
@@ -44,6 +44,8 @@ type State = {
   recentSearches: string[]
   /** Engajamento e benefícios (RNE-002, RNE-006, RF-005). */
   engagement: Engagement
+  /** Assinatura RiskMap Mais (simulada, sem cobrança no protótipo). */
+  subscription: { active: boolean; since: string | null }
 }
 
 export type Engagement = {
@@ -76,6 +78,7 @@ const initial: State = {
   readAlerts: [],
   recentSearches: ['jardim-america', 'vila-nova'],
   engagement: seedEngagement,
+  subscription: { active: false, since: null },
 }
 
 type Action =
@@ -90,6 +93,8 @@ type Action =
   | { type: 'search'; id: string }
   | { type: 'reset' }
   | { type: 'earn'; kind: PointKind; label: string }
+  | { type: 'subscribe' }
+  | { type: 'unsubscribe' }
   | { type: 'redeem'; offerId: string; id: string; code: string }
 
 function reducer(s: State, a: Action): State {
@@ -140,7 +145,9 @@ function reducer(s: State, a: Action): State {
         const today = e.events.filter((x) => x.kind === 'rota' && new Date(x.date).toDateString() === now.toDateString()).length
         if (today >= ROUTE_POINTS_PER_DAY) return { ...s, engagement: { ...e, lastActivity: now.toISOString() } }
       }
-      const ev: PointEvent = { id: uid(), kind: a.kind, points: POINTS[a.kind], label: a.label, date: now.toISOString() }
+      // assinantes do RiskMap Mais somam pontos em dobro
+      const pts = POINTS[a.kind] * (s.subscription.active ? PLAN.pointsMultiplier : 1)
+      const ev: PointEvent = { id: uid(), kind: a.kind, points: pts, label: a.label, date: now.toISOString() }
       return {
         ...s,
         engagement: {
@@ -152,6 +159,10 @@ function reducer(s: State, a: Action): State {
         },
       }
     }
+    case 'subscribe':
+      return { ...s, subscription: { active: true, since: new Date().toISOString() } }
+    case 'unsubscribe':
+      return { ...s, subscription: { active: false, since: null } }
     case 'redeem': {
       const r: Redemption = { id: a.id, offerId: a.offerId, code: a.code, createdAt: new Date().toISOString(), status: 'gerado' }
       return { ...s, engagement: { ...s.engagement, redemptions: [r, ...s.engagement.redemptions] } }

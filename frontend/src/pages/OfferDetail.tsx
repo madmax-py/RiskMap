@@ -15,10 +15,10 @@ const fmtDate = (d: string) => new Date(d + 'T12:00:00').toLocaleDateString('pt-
 export default function OfferDetail() {
   const { id = '' } = useParams()
   const nav = useNavigate()
-  const { engagement, level, redeem, settings } = useApp()
+  const { engagement, level, redeem, settings, subscription } = useApp()
   const offer = offerById(id)
   const partner = offer && partnerById(offer.partnerId)
-  if (!offer || !partner) return <Navigate to="/beneficios" replace />
+  if (!offer || !partner || !subscription.active) return <Navigate to="/beneficios" replace />
 
   const allowed = canRedeem(level, offer)
   const missing = LEVELS.find((l) => l.id === offer.minLevel)!.min - engagement.points

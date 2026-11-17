@@ -16,6 +16,8 @@ import { fadeUp, stagger, uid } from '../lib/motion'
 import { norm, useDesktop } from '../lib/hooks'
 import type { RoutePreference } from '../lib/city'
 import { LEVEL_LABEL } from '../components/Badges'
+import { IS_REAL } from '../geo/config'
+import type { Pt } from '../lib/city'
 
 const PREFS: { value: RoutePreference; label: string }[] = [
   { value: 'segura', label: 'Mais segura' },
@@ -31,7 +33,7 @@ const CLASS_INFO = {
 
 export default function RouteAnalysis() {
   const [params, setParams] = useSearchParams()
-  const { settings, isFavorite, dispatch } = useApp()
+  const { settings, isFavorite, dispatch, subscription } = useApp()
   const toast = useToast()
   const nav = useNavigate()
   const desktop = useDesktop()
@@ -244,6 +246,21 @@ export default function RouteAnalysis() {
                 </div>
               </motion.section>
 
+              {subscription.active && IS_REAL && (
+                <motion.section variants={fadeUp} className="card external-nav">
+                  <h4>Seguir em outro app</h4>
+                  <p className="muted small">O Google Maps recebe a rota com os desvios. O Waze recebe só o destino e pode escolher outro caminho.</p>
+                  <div className="external-nav__btns">
+                    <a className="btn btn--secondary btn--md" href={googleMapsUrl(route.points)} target="_blank" rel="noopener noreferrer">
+                      Google Maps
+                    </a>
+                    <a className="btn btn--secondary btn--md" href={wazeUrl(route.points)} target="_blank" rel="noopener noreferrer">
+                      Waze
+                    </a>
+                  </div>
+                </motion.section>
+              )}
+
               <motion.section variants={fadeUp} className="card tips-card">
                 <h4>Dicas de segurança</h4>
                 <ul>
@@ -280,6 +297,18 @@ export default function RouteAnalysis() {
     </div>
   )
 }
+
+/** Deep links (RF-002). Pontos do modo real são [lng, lat]. */
+const ll = (p: Pt) => `${p[1].toFixed(6)},${p[0].toFixed(6)}`
+function googleMapsUrl(points: Pt[]) {
+  // até 8 pontos intermediários pra manter os desvios da rota escolhida
+  const n = Math.min(8, Math.max(0, points.length - 2))
+  const mids = Array.from({ length: n }, (_, i) => points[Math.round(((i + 1) * (points.length - 1)) / (n + 1))])
+  const q = new URLSearchParams({ api: '1', origin: ll(points[0]), destination: ll(points[points.length - 1]), travelmode: 'driving' })
+  if (mids.length) q.set('waypoints', mids.map(ll).join('|'))
+  return `https://www.google.com/maps/dir/?${q}`
+}
+const wazeUrl = (points: Pt[]) => `https://waze.com/ul?ll=${ll(points[points.length - 1])}&navigate=yes`
 
 /** Seletor de local com busca (combobox simples). */
 function PlacePicker({ label, value, onChange, allowCurrent, dot }: { label: string; value: string; onChange: (v: string) => void; allowCurrent?: boolean; dot: 'origin' | 'dest' }) {
